@@ -1,0 +1,8 @@
+device STM32F103C8
+si SWD
+speed 4000
+r
+loadfile E:\Hust\非常的大的一个尝试\electric_arch\androidhuman\androidhuman\MDK-ARM\LY-020-USB-CDCsoftware\LY-020-USB-CDCsoftware.hex
+r
+g
+q

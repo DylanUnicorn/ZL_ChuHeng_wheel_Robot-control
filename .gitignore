@@ -1,0 +1,29 @@
+# Python local environment
+.venv/
+__pycache__/
+*.pyc
+
+# Local editor / CubeMX metadata
+.vscode/
+.mxproject
+
+# Keil user state and generated build outputs
+MDK-ARM/*.uvguix.*
+MDK-ARM/*.uvoptx
+MDK-ARM/*.bak
+MDK-ARM/JLinkLog.txt
+MDK-ARM/JLinkSettings.ini
+MDK-ARM/agent_build*.log
+MDK-ARM/agent_flash*.log
+MDK-ARM/startup_stm32f103xb.lst
+MDK-ARM/LY-020-USB-CDCsoftware/
+
+# Customer-facing / temporary investigation notes kept local only
+ZLAC8015D_overload_diagnosis_2026_04_28.md
+ZLAC8015D_sudden_brake_vendor_report_2026_04_29.md
+
+# Local reference materials not intended for the code repository
+LY-020-SCH.pdf
+00ref_docx/ZLAC8015D_CANopen_examples.txt
+00ref_docx/ZLAC8015D_CANopen_quickstart.txt
+00ref_docx/ZLAC8015D_manual.txt
