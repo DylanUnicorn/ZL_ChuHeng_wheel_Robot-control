@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
+#include "task.h"
 
 #include "OLED_IIC_Config.h"
 #include "OLED_Function.h"
@@ -133,6 +134,71 @@ PUTCHAR_PROTOTYPE
   return ch;
 }
 
+static void app_fault_delay(volatile uint32_t cycles)
+{
+  while (cycles-- > 0U)
+  {
+    __NOP();
+  }
+}
+
+static void app_break_if_debugger_attached(void)
+{
+  if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) != 0U)
+  {
+    __BKPT(0);
+  }
+}
+
+void App_FaultTrap(uint8_t code)
+{
+  __disable_irq();
+
+  app_break_if_debugger_attached();
+
+  HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_RESET);
+
+  for (;;)
+  {
+    uint8_t pulse_count = code;
+    if (pulse_count == 0U)
+    {
+      pulse_count = 1U;
+    }
+
+    for (uint8_t pulse = 0; pulse < pulse_count; ++pulse)
+    {
+      HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
+      app_fault_delay(7200000U);
+      HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_RESET);
+      app_fault_delay(7200000U);
+    }
+
+    app_fault_delay(21600000U);
+  }
+}
+
+void vAssertCalled(const char *file, uint32_t line)
+{
+  (void)file;
+  (void)line;
+  App_FaultTrap(APP_FAULT_RTOS_ASSERT);
+}
+
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
+{
+  (void)xTask;
+  (void)pcTaskName;
+  App_FaultTrap(APP_FAULT_STACK_OVERFLOW);
+}
+
+void vApplicationMallocFailedHook(void)
+{
+  App_FaultTrap(APP_FAULT_MALLOC_FAILED);
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -152,6 +218,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk | SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_USGFAULTENA_Msk;
 
   /* USER CODE END Init */
 
@@ -866,7 +933,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == USART2)
     {
-        HAL_GPIO_TogglePin(GPIOB, LED1_Pin); // Toggle LED to show valid interrupt
         WitSerialDataIn(u2_rx_byte);
         HAL_UART_Receive_IT(&huart2, &u2_rx_byte, 1);
     }
@@ -883,11 +949,15 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
     __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
   }
   else if (huart->Instance == USART2)
-    {
-        HAL_GPIO_TogglePin(GPIOB, LED2_Pin); // Toggle LED2 on Error
-        // 重新开启接收，防止因 Overrun/Noise/Frame Error 导致中断停止
-        HAL_UART_Receive_IT(&huart2, &u2_rx_byte, 1);
-    }
+  {
+    HAL_UART_AbortReceive(huart);
+    __HAL_UART_CLEAR_PEFLAG(huart);
+    __HAL_UART_CLEAR_FEFLAG(huart);
+    __HAL_UART_CLEAR_NEFLAG(huart);
+    __HAL_UART_CLEAR_OREFLAG(huart);
+    huart->ErrorCode = HAL_UART_ERROR_NONE;
+    HAL_UART_Receive_IT(huart, &u2_rx_byte, 1);
+  }
 }
 
 // 接收到空闲中断事件回调（DMA接收完成或空闲超时）
@@ -937,8 +1007,8 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    CAN_Test();
-    osDelay(1);
+    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+    osDelay(1000);
   }
   /* USER CODE END 5 */
 }
@@ -950,11 +1020,7 @@ void StartDefaultTask(void *argument)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+  App_FaultTrap(APP_FAULT_ERROR_HANDLER);
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -969,8 +1035,9 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  (void)file;
+  (void)line;
+  App_FaultTrap(APP_FAULT_ERROR_HANDLER);
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

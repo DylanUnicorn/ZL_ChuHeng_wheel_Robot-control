@@ -53,6 +53,7 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+void App_FaultTrap(uint8_t code);
 
 /* USER CODE END EFP */
 
@@ -73,6 +74,14 @@ void Error_Handler(void);
 #define K2_EXTI_IRQn EXTI9_5_IRQn
 
 /* USER CODE BEGIN Private defines */
+#define APP_FAULT_HARDFAULT       1U
+#define APP_FAULT_MEMMANAGE       2U
+#define APP_FAULT_BUSFAULT        3U
+#define APP_FAULT_USAGEFAULT      4U
+#define APP_FAULT_ERROR_HANDLER   5U
+#define APP_FAULT_RTOS_ASSERT     6U
+#define APP_FAULT_STACK_OVERFLOW  7U
+#define APP_FAULT_MALLOC_FAILED   8U
 
 /* USER CODE END Private defines */
 
