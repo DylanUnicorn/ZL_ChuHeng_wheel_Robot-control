@@ -125,8 +125,8 @@ typedef enum {
 #define SDO_TIMEOUT_MS          250   // SDO 应答超时；靠重试/降级处理偶发丢应答，避免长时间阻塞控制任务
 #define NMT_BOOTUP_TIMEOUT_MS   2000  // 等待 Boot-up 超时
 #define HEARTBEAT_DEFAULT_MS    1000  // 默认心跳周期
-#define ZLA_VELOCITY_ACCEL_TIME_MS      1000U // 速度模式加速时间，降低上电冲击
-#define ZLA_VELOCITY_DECEL_TIME_MS      3000U // 速度模式减速时间，降低回灌过压风险
+#define ZLA_VELOCITY_ACCEL_TIME_MS      300U  // 速度模式加速时间，提升遥控起步响应
+#define ZLA_VELOCITY_DECEL_TIME_MS      600U  // 速度模式减速时间，显式零速时快速停轮
 #define ZLA_OVERVOLTAGE_RESET_MAX_CV    7000U // 允许软件清过压的最高母线电压，单位0.01V
 
 /* -------------------- 错误码定义 -------------------- */

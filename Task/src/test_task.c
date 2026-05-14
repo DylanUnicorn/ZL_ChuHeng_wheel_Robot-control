@@ -36,12 +36,12 @@ static uint8_t command_timeout_stop_active = 0U;
 #define CHASSIS_DIAG_MOVING_PERIOD_MS 5000U
 #define CHASSIS_VELOCITY_READ_IDLE_PERIOD_MS 1000U
 #define CHASSIS_STOP_BURST_COUNT 5U
-#define CHASSIS_LINEAR_ACCEL_MPS2 0.8f
-#define CHASSIS_LINEAR_DECEL_MPS2 0.25f
-#define CHASSIS_CMD_TIMEOUT_LINEAR_DECEL_MPS2 1.0f
-#define CHASSIS_ANGULAR_ACCEL_RADPS2 2.0f
-#define CHASSIS_ANGULAR_DECEL_RADPS2 0.6f
-#define CHASSIS_CMD_TIMEOUT_ANGULAR_DECEL_RADPS2 2.4f
+#define CHASSIS_LINEAR_ACCEL_MPS2 2.0f
+#define CHASSIS_LINEAR_DECEL_MPS2 1.5f
+#define CHASSIS_CMD_TIMEOUT_LINEAR_DECEL_MPS2 2.0f
+#define CHASSIS_ANGULAR_ACCEL_RADPS2 4.0f
+#define CHASSIS_ANGULAR_DECEL_RADPS2 3.0f
+#define CHASSIS_CMD_TIMEOUT_ANGULAR_DECEL_RADPS2 4.0f
 
 #ifndef CHASSIS_STATUS_DIAGNOSTIC_PACKING
 #define CHASSIS_STATUS_DIAGNOSTIC_PACKING 0
@@ -199,7 +199,8 @@ static float ramp_toward(float current, float target, float accel_rate, float de
 
 static void request_chassis_safe_stop(void)
 {
-    uint8_t was_moving = (!motion_near(target_vx, 0.0f) || !motion_near(target_omega, 0.0f));
+    uint8_t was_moving = (!motion_near(target_vx, 0.0f) || !motion_near(target_omega, 0.0f) ||
+                          !motion_near(vx, 0.0f) || !motion_near(omega, 0.0f));
     target_vx = 0.0f;
     target_omega = 0.0f;
     if (was_moving)
@@ -209,6 +210,14 @@ static void request_chassis_safe_stop(void)
 }
 
 static void request_chassis_command_timeout_stop(void)
+{
+    request_chassis_safe_stop();
+    command_timeout_stop_active = 1U;
+    stop_command_burst = CHASSIS_STOP_BURST_COUNT;
+    motor_command_dirty = 1U;
+}
+
+static void request_chassis_commanded_stop(void)
 {
     request_chassis_safe_stop();
     command_timeout_stop_active = 1U;
@@ -332,19 +341,21 @@ void test_task(void const * argument)
                 if (pc_recv_data.is_valid)
                 {
                     uint8_t zero_motion_command = is_zero_motion_command(pc_recv_data.vx, pc_recv_data.yaw);
-                    command_timeout_stop_active = 0U;
-                    if (!motion_near(target_vx, pc_recv_data.vx) ||
-                        !motion_near(target_omega, pc_recv_data.yaw))
+                    if (zero_motion_command)
                     {
-                        motor_command_dirty = 1U;
+                        request_chassis_commanded_stop();
                     }
-                    if (zero_motion_command && stop_command_burst == 0U)
+                    else
                     {
-                        stop_command_burst = CHASSIS_STOP_BURST_COUNT;
-                        motor_command_dirty = 1U;
+                        command_timeout_stop_active = 0U;
+                        if (!motion_near(target_vx, pc_recv_data.vx) ||
+                            !motion_near(target_omega, pc_recv_data.yaw))
+                        {
+                            motor_command_dirty = 1U;
+                        }
+                        target_vx = pc_recv_data.vx;
+                        target_omega = pc_recv_data.yaw;
                     }
-                    target_vx = pc_recv_data.vx;
-                    target_omega = pc_recv_data.yaw;
                     pc_last_recv_tick = xTaskGetTickCount();
                     pc_recv_data.is_valid = 0;
                 }
