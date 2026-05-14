@@ -1,0 +1,982 @@
+                             ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+    ZLAC8015D SERVO DRIVER (SPECIAL FOR HUB
+
+                                         SERVO MOTOR)
+
+           RS485 COMMUNICATION INSTRUCTION
+
+          Version                             Description                                                 Date
+           V1.0                               First edition
+
+
+
+
+1 Shenzhen ZhongLing Technology Co.,Ltd.    TEL：+86-0755-29799302              FAX：+86-0755-2912 4283             www.zlingkj.com
+                                      ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+                                                                CATALOG
+1. RS485 SERIAL PORT SETTINGS ............................................................................................................ 3
+2. PROTOCOL FORMAT ........................................................................................................................... 3
+   2.1 Read Register Function Code 0x03 ............................................................................................... 4
+   2.2 Write Single Register (16-bit data) Function Code 0x06............................................................... 4
+   2.3 Write Multiple Register Function Code 0x10 ................................................................................ 5
+3. CONTROL ROUTINE ............................................................................................................................. 6
+   3.1 Velocity Mode ............................................................................................................................... 6
+   3.2 Position Mode ............................................................................................................................... 7
+   3.4 Torque Mode .............................................................................................................................. 10
+   3.5 Quick stop ................................................................................................................................... 11
+   3.6. Error and clear ........................................................................................................................... 11
+4. ADDRESS DIRECTIONARY .................................................................................................................. 13
+
+
+
+
+2 Shenzhen ZhongLing Technology Co.,Ltd.              TEL：+86-0755-29799302               FAX：+86-0755-2912 4283              www.zlingkj.com
+                             ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+1. RS485 SERIAL PORT SETTINGS
+
+RS485 communication of ZLAC8015D supports Modbus RTU protocol.
+The driver address can be set to 0-127, the default address is 1.
+For RS485 communication, ZLAC8015D has 7 optional baud rates: 9600, 19200, 38400, 57600, 115200, 128000,
+256000. Baud rate could be set through software, its default value is 115200.
+Serial port configuration：
+Data bits: 8
+Stop bits: 1
+Parity: None
+Flow control: None
+
+
+2. PROTOCOL FORMAT
+
+The MODBUS protocol defines a protocol data unit (PDU), which has nothing to do with the basic
+communication layer. The MODBUS protocol mapping of specific bus or network, can introduce some add-
+on domain on the application data unit (ADU).
+
+
+
+
+The MODBUS protocol defines three PDUs:
+MODBUS requests PDU = {function code + request data field}
+MODBUS responses PDU = {function code + response data field}
+MODBUS abnormal responses PDU = {abnormal function code + error code}
+The function codes supported by ZLAC8015D are as below:
+   Function description                        Function code                                 Error function code
+ Read multiple registers                             0x03                                               0x83
+ Write single register                               0x06                                               0x86
+ Writer multiple registers                           0x10                                               0x90
+Error function code shows as below:
+
+               Error code                               Name                                         Meaning
+
+                 0x01                         Illegal function code                              Function error
+
+                 0x02                          Illegal data address                           Data address error
+
+                 0x03                            Illegal data value                                 Data error
+
+
+
+
+3 Shenzhen ZhongLing Technology Co.,Ltd.    TEL：+86-0755-29799302              FAX：+86-0755-2912 4283             www.zlingkj.com
+                             ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+2.1 Read Register Function Code 0x03
+
+     Eg: Send command “Read the actual speed of motor”, return “The actual speed of motor is 10RPM”
+
+
+     Send:
+                       Command                             Content Description
+                           01                                    Driver Address
+                           03                                    Function Code
+                           20                        High 8 bits of register start address
+                           AB                        Low 8 bits of register start address
+                           00                           High 8 bits of register number
+                           02                           Low 8 bits of register number
+                           BE                              High 8 bits of CRC check
+                           2B                               Low 8 bits of CRC check
+
+
+     Return data:
+                       Command                             Content Description
+                           01                                    Driver Address
+                           03                                    Function Code
+                           04                                Number of bytes read
+                           00                                 High 8 bits of data 0
+                           64                                 Low 8 bits of data 0
+                           00                                 High 8 bits of data 1
+                           64                                 Low 8 bits of data 1
+                           BA                              High 8 bits of CRC check
+                           07                               Low 8 bits of CRC check
+
+
+2.2 Write Single Register (16-bit data) Function Code 0x06
+
+     Eg: Write Left motor target speed 100RPM
+
+
+     Send:
+                       Command                             Content Description
+                           01                                    Driver Address
+                           06                                    Function Code
+                           20                        High 8 bits of register start address
+                           88                        Low 8 bits of register start address
+                           00                           High 8 bits of register number
+                           64                           Low 8 bits of register number
+                           03                              High 8 bits of CRC check
+                           CB                               Low 8 bits of CRC check
+
+
+
+
+4 Shenzhen ZhongLing Technology Co.,Ltd.    TEL：+86-0755-29799302              FAX：+86-0755-2912 4283             www.zlingkj.com
+                             ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+     Return data:
+                       Command                             Content Description
+                           01                                    Driver Address
+                           06                                    Function Code
+                           20                        High 8 bits of register start address
+                           88                        Low 8 bits of register start address
+                           00                           High 8 bits of register number
+                           64                           Low 8 bits of register number
+                           03                              High 8 bits of CRC check
+                           CB                               Low 8 bits of CRC check
+
+
+
+2.3 Write Multiple Register Function Code 0x10
+
+     Eg: Write Left motor encoder wire 1024, hall offset angle 0
+
+
+     Send:
+                       Command                             Content Description
+                           01                                    Driver Address
+                           10                                    Function Code
+                           20                        High 8 bits of register start address
+                           30                        Low 8 bits of register start address
+                           00                           High 8 bits of register number
+                           02                           Low 8 bits of register number
+                           04                                   Number of bytes
+                           04                                 High 8 bits of data 0
+                           00                                 Low 8 bits of data 0
+                           00                                 High 8 bits of data 1
+                           00                                 Low 8 bits of data 1
+                           68                              High 8 bits of CRC check
+                           4A                               Low 8 bits of CRC check
+
+
+
+
+     Return data:
+                       Command                             Content Description
+                           01                                    Driver Address
+                           10                                    Function Code
+                           20                        High 8 bits of register start address
+                           30                        Low 8 bits of register start address
+                           02                                 Number of registers
+                           4A                              High 8 bits of CRC check
+                           07                               Low 8 bits of CRC check
+
+
+
+
+5 Shenzhen ZhongLing Technology Co.,Ltd.    TEL：+86-0755-29799302              FAX：+86-0755-2912 4283             www.zlingkj.com
+                             ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+3. CONTROL ROUTINE
+
+3.1 Velocity Mode
+
+The relevant parameter addresses are shown in the table below：
+ Index               Name                                Description                       Type      Access       Default
+                                           Control word
+                                           0x05：quick stop
+ 200Eh      Control word                   0x06：clear fault                                U16       RW               0
+                                           0x07：stop
+                                           0x08：enable
+ 200Dh      Control mode                   3：velocity mode                                 U16       RW               0
+                                           Acceleration time
+ 2080h      Acceleration time(Left)                                                        U16       RW            500ms
+                                           Range：0-32767ms；
+                                           Acceleration time
+ 2081h      Acceleration time(Right)                                                       U16       RW            500ms
+                                           Range：0-32767ms；
+                                           Deceleration time；
+ 2082h      Deceleration time(Left)                                                        U16       RW            500ms
+                                           Range：0-32767ms；
+                                           Deceleration time；
+ 2083h      Deceleration time(Right)                                                       U16       RW            500ms
+                                           Range：0-32767ms；
+                                           Target velocity in velocity mode
+ 2088h      Target velocity(Left)                                                          I16       RW               0
+                                           Range：-3000-3000r/min；
+                                           Target velocity in velocity mode
+ 2089h      Target velocity(Right)                                                         I16       RW               0
+                                           Range：-3000-3000r/min；
+ 20ABh      Actual velocity(Left)          Actual velocity，unit: 0.1r/min                  I16       RO           0
+ 20ACh      Actual velocity(Right)         Actual velocity，unit: 0.1r/min                  I16       RO           0
+
+Velocity mode initialization
+             Description                                 Transmit                                         Receive
+   Velocity mode                        01 06 20 0D 00 03 53 C8                           01 06 20 0D 00 03 53 C8
+   Acceleration time(Left) to           01 06 20 80 01 F4 83 F5                           01 06 20 80 01 F4 83 F5
+   500ms
+   Acceleration time(Right) to          01 06 20 81 01 F4 D2 35                           01 06 20 81 01 F4 D2 35
+   500ms
+   Deceleration time(Left) to           01 06 20 82 01 F4 22 35                           01 06 20 82 01 F4 22 35
+   500ms
+   Deceleration time(Right) to          01 06 20 83 01 F4 73 F5                           01 06 20 83 01 F4 73 F5
+   500ms
+   Enable                               01 06 20 0E 00 08 E2 0F                           01 06 20 0E 00 08 E2 0F
+
+
+
+
+6 Shenzhen ZhongLing Technology Co.,Ltd.    TEL：+86-0755-29799302              FAX：+86-0755-2912 4283             www.zlingkj.com
+                              ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+Left motor velocity control
+             Description                                  Transmit                                         Receive
+   Target velocity(Left) to              01 06 20 88 00 64 03 CB                           01 06 20 88 00 64 03 CB
+   100RPM
+   Target velocity(Left) to              01 06 20 88 FF 9C 43 B9                           01 06 20 88 FF 9C 43 B9
+   -100RPM
+   Stop                                  01 06 20 31 00 07 92 07                           01 06 20 31 00 07 92 07
+
+Right motor velocity control
+             Description                                  Transmit                                         Receive
+   Target velocity(Right) to             01 06 20 89 00 64 52 0B                           01 06 20 89 00 64 52 0B
+   100RPM
+   Target velocity(Right) to             01 06 20 89 FF 9C 12 79                           01 06 20 89 FF 9C 12 79
+   -100RPM
+   Stop                                  01 06 20 31 00 07 92 07                           01 06 20 31 00 07 92 07
+
+
+Synchronous velocity control
+          Description                                 Transmit                                             Receive
+   Target velocity to             01 10 20 88 00 02 04 00 64 00 64 23 9C                   01 10 20 88 00 02 CA 22
+   100RPM
+   Target velocity to             01 10 20 88 00 02 04 FF 9C FF 9C D2 0B                   01 10 20 88 00 02 CA 22
+   -100RPM
+   Stop                           01 06 20 31 00 07 92 07                                  01 06 20 31 00 07 92 07
+
+
+
+3.2 Position Mode
+
+The relevant parameter addresses are shown in the table below：
+  Index                 Name                                     Description                          Type      Access        Default
+                                                Control word
+                                                0x05：quick stop
+                                                0x06：clear fault
+                                                0x07：stop
+ 200Eh     Control word                         0x08：enable                    U16                              RW                  0
+                                                0x10：start(Synchronous)（needed
+                                                in position control）
+                                                0x11: start(Left)
+                                                0x12: start(Right)
+           Synchronous/asynchronous                          0：Synchronous
+ 200Fh                                                                                                U16         RW                0
+                 control status                              1：asynchronous
+                                                1：Position mode( Relative)
+ 200Dh     Control mode                                                                               U16       RW                  0
+                                                2：Position mode( Absolute)
+                                                Acceleration time
+ 2080h     Acceleration time(Left)                                                                    U16       RW                500ms
+                                                Range：0-32767ms；
+
+
+
+
+7 Shenzhen ZhongLing Technology Co.,Ltd.     TEL：+86-0755-29799302              FAX：+86-0755-2912 4283             www.zlingkj.com
+                              ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+                                                Acceleration time
+ 2081h      Acceleration time(Right)                                                                  U16       RW                500ms
+                                                Range：0-32767ms；
+                                                Deceleration time；
+ 2082h      Deceleration time(Left)                                                                   U16       RW                500ms
+                                                Range：0-32767ms；
+                                                Deceleration time；
+ 2083h      Deceleration time(Right)                                                                  U16       RW                500ms
+                                                Range：0-32767ms；
+            Target position high 16
+ 208Ah                                          Range                                                 I16       RW                  0
+            bits(Left)
+                                                Relative：-0x7FFFFFFF~0x7FFFFFFF
+            Target position low 16
+ 208Bh                                          Absolute：-0x3FFFFFFF~0x3FFFFFFF                       I16       RW                  0
+            bits(Left)
+            Target position high 16
+ 208Ch                                          Range                                                 I16       RW                  0
+            bits(Right)
+                                                Relative：-0x7FFFFFFF~0x7FFFFFFF
+            Target position low 16
+ 208Dh                                          Absolute：-0x3FFFFFFF~0x3FFFFFFF                       I16       RW                  0
+            bits(Right)
+                                                Target speed in position mode
+ 208Eh      Target speed(Left)                                                                        U16       RW           120r/min
+                                                Range：1-1000r/min；
+                                                Target speed in position mode
+ 208Fh      Target speed(Right)                                                                       U16       RW           120r/min
+                                                Range：1-1000r/min；
+ 20A7h      Actual motor position high
+                                                                                                      I16       RO           0
+            16 bits(Left)                       Actual motor position, unit: counts
+ 20A8h      Actual motor position low           Range:-0x7FFFFFFF~0x7FFFFFFF
+                                                                                                      I16       RO           0
+            16 bits(Left)
+ 20A9h      Actual motor position high
+                                                                                                      I16       RO           0
+            16 bits(Right)                      Actual motor position, unit: counts
+ 20AAh      Actual motor position low           Range:-0x7FFFFFFF~0x7FFFFFFF
+                                                                                                      I16       RO           0
+            16 bits(Right)
+
+Position mode asynchronous control initialization
+             Description                                  Transmit                                          Receive
+   Asynchronous control                  01 06 20 0F 00 00 B2 09                           01 06 20 0F 00 00 B2 09
+   Position mode( Relative)              01 06 20 0D 00 01 D2 09                           01 06 20 0D 00 01 D2 09
+   Acceleration time(Left) to            01 06 20 80 01 F4 83 F5                           01 06 20 80 01 F4 83 F5
+   500ms
+   Acceleration time(Right) to           01 06 20 81 01 F4 D2 35                           01 06 20 81 01 F4 D2 35
+   500ms
+   Deceleration time(Left) to            01 06 20 82 01 F4 22 35                           01 06 20 82 01 F4 22 35
+   500ms
+   Deceleration time(Right) to           01 06 20 83 01 F4 73 F5                           01 06 20 83 01 F4 73 F5
+   500ms
+   Target speed(Left) to 50RPM           01 06 20 8E 00 32 63 F4                           01 06 20 8E 00 32 63 F4
+   Target      speed(Right)       to     01 06 20 8F 00 32 32 34                           01 06 20 8F 00 32 32 34
+   50RPM
+   Enable                                01 06 20 0E 00 08 E2 0F                           01 06 20 0E 00 08 E2 0F
+
+
+
+
+8 Shenzhen ZhongLing Technology Co.,Ltd.     TEL：+86-0755-29799302              FAX：+86-0755-2912 4283             www.zlingkj.com
+                                ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+Left motor relative position control
+             Description                                        Transmit                                         Receive
+   Target position(Left) to                01 10 20 8A 00 02 04 00 00 50 00 DE 71                    01 10 20 8A 00 02 6B E2
+   20480 pulses
+   Start(Left)                             01 06 20 0E 00 11 23 C5                                   01 06 20 0E 00 11 23 C5
+   Target position(Left) to                01 10 20 8A 00 02 04 FF FF B0 00 97 95                    01 10 20 8A 00 02 6B E2
+   -20480 pulses
+   Start(Left)                             01 06 20 0E 00 11 23 C5                                   01 06 20 0E 00 11 23 C5
+   Stop                                    01 06 20 0E 00 07 A2 0B                                   01 06 20 0E 00 07 A2 0B
+
+
+Right motor relative position control
+             Description                                        Transmit                                         Receive
+   Target position(Right) to               01 10 20 8C 00 02 04 00 00 50 00 5E 5B                    01 10 20 8C 00 02 8B E3
+   20480 pulses
+   Start(Right)                            01 06 20 0E 00 12 63 C4                                   01 06 20 0E 00 12 63 C4
+   Target position(Right) to               01 10 20 8C 00 02 04 FF FF B0 00 17 BF                    01 10 20 8C 00 02 8B E3
+   -20480 pulses
+   Start(Right)                            01 06 20 0E 00 12 63 C4                                   01 06 20 0E 00 12 63 C4
+   Stop                                    01 06 20 0E 00 07 A2 0B                                   01 06 20 0E 00 07 A2 0B
+
+
+Position mode synchronization control initialization
+             Description                                    Transmit                                         Receive
+   Synchronous control                     01 06 20 0F 00 01 73 C9                           01 06 20 0F 00 01 73 C9
+   Position mode( Relative)                01 06 20 0D 00 01 D2 09                           01 06 20 0D 00 01 D2 09
+   Acceleration time(Left) to              01 06 20 80 01 F4 83 F5                           01 06 20 80 01 F4 83 F5
+   500ms
+   Acceleration time(Right) to             01 06 20 81 01 F4 D2 35                           01 06 20 81 01 F4 D2 35
+   500ms
+   Deceleration time(Left) to              01 06 20 82 01 F4 22 35                           01 06 20 82 01 F4 22 35
+   500ms
+   Deceleration time(Right) to             01 06 20 83 01 F4 73 F5                           01 06 20 83 01 F4 73 F5
+   500ms
+   Target speed(Left) to 50RPM             01 06 20 8E 00 32 63 F4                           01 06 20 8E 00 32 63 F4
+   Target        speed(Right)       to     01 06 20 8F 00 32 32 34                           01 06 20 8F 00 32 32 34
+   50RPM
+   Enable                                  01 06 20 0E 00 08 E2 0F                           01 06 20 0E 00 08 E2 0F
+
+Synchronous relative position control
+             Description                                    Transmit                                         Receive
+   Target positon to                       01 10 20 8A 00 04 08 00 00 50 00                  01 10 20 8A 00 04 EB E0
+   20480pulses                             00 00 50 00 E3 2C
+   Start(Synchronous)                      01 06 20 0E 00 10 E2 05                           01 06 20 0E 00 10 E2 05
+   Target positon to                       01 10 20 8A 00 04 08 FF FF B0 00                  01 10 20 8A 00 04 EB E0
+
+
+
+
+9 Shenzhen ZhongLing Technology Co.,Ltd.       TEL：+86-0755-29799302              FAX：+86-0755-2912 4283             www.zlingkj.com
+                             ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+   -20480pulses                         FF FF B0 00 FC A3
+   Start(Synchronous)                   01 06 20 0E 00 10 E2 05                           01 06 20 0E 00 10 E2 05
+   Stop                                 01 06 20 0E 00 07 A2 0B                           01 06 20 0E 00 07 A2 0B
+
+
+
+3.4 Torque Mode
+
+The relevant parameter addresses are shown in the table below：
+ Index           Name                 Description        Type Access                               Default
+                                      Control word
+                                      0x05：quick stop
+ 200Eh      Control word              0x06：clear fault                     U16        RW               0
+                                      0x07：stop
+                                      0x08：enable
+ 200Dh      Control mode              4：torque mode                        U16        RW               0
+ 2086h      Torque rate(Left)         Unit: mA/S;                          U16        RW           300ms
+ 2087h      Torque rate(Right)        Unit: mA/S;                          U16        RW           300ms
+ 2090h      Target torque(Left)       Unit: mA                             I16        RW           0
+                                      Range: -30000~30000；
+ 2091h      Target torque(Right)      Unit: mA                             I16        RW           0
+                                      Range: -30000~30000；
+            Actual torque(Left)       Unit: 0.1A                           I16        RO           0
+ 20ADh
+                                      Range: -300~300；
+            Actual torque(Right)      Unit: 0.1A                           I16        RO           0
+ 20AEh
+                                      Range: -300~300；
+
+Torque mode initialization
+             Description                                 Transmit                                          Receive
+   Torque mode                          01 06 20 0D 00 04 12 0A                           01 06 20 0D 00 04 12 0A
+   Torque rate(Left)                    01 06 20 86 01 F4 63 F4                           01 06 20 86 01 F4 63 F4
+   to 500mA/s
+   Torque rate(Right)                   01 06 20 87 01 F4 32 34                           01 06 20 87 01 F4 32 34
+   to 500mA/s
+   Enable                               01 06 20 31 00 08 D2 03                           01 06 20 31 00 08 D2 03
+
+Left motor torque control
+             Description                                 Transmit                                          Receive
+   Target torque(Left)                  01 06 20 90 07 D0 81 8B                           01 06 20 90 07 D0 81 8B
+   to 2000mA
+   Target torque(Left)                  01 06 20 90 F8 30 C1 F3                           01 06 20 90 F8 30 C1 F3
+   to -2000mA
+   Stop                                 01 06 20 0E 00 07 A2 0B                           01 06 20 0E 00 07 A2 0B
+
+
+
+
+10 Shenzhen ZhongLing Technology Co.,Ltd.     TEL：+86-0755-29799302              FAX：+86-0755-2912 4283            www.zlingkj.com
+                             ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+Right motor torque control
+             Description                                 Transmit                                         Receive
+   Target torque(Right)                 01 06 20 91 07 D0 D0 4B                           01 06 20 91 07 D0 D0 4B
+   to 2000mA
+   Target torque(Right)                 01 06 20 91 F8 30 90 33                           01 06 20 91 F8 30 90 33
+   to -2000mA
+   Stop                                 01 06 20 0E 00 07 A2 0B                           01 06 20 0E 00 07 A2 0B
+
+Synchronous torque control
+             Description                                 Transmit                                         Receive
+   Target torque                        01 10 20 90 00 02 04 07 D0 07 D0                  01 10 20 90 00 02 4A 25
+   to 2000mA                            60 23
+   Target torque                        01 10 20 90 00 02 04 F8 30 F8 30                  01 10 20 90 00 02 4A 25
+   to -2000mA                           11 B9
+   Stop                                 01 06 20 0E 00 07 A2 0B                           01 06 20 0E 00 07 A2 0B
+
+
+
+3.5 Quick stop
+
+The relevant parameter addresses are shown in the table below：
+ Index          Name               Description        Type Access                             Default
+                                    Control word
+                                    0x05：quick stop
+ 200Eh     Control word             0x06：clear fault                   U16       RW               0
+                                    0x07：stop
+                                    0x08：enable
+           Input effective level    Bit0：Input(X0)
+                                    Bit1：Input(X0)
+ 2016h                                                                 U16       RW           0
+                                    0：Default(High level)
+                                    1：Reverse(Low level)
+ 2017h     X0 function choice       0：None                             U16       RW           9
+           X1 function choice       1-8：NC
+ 2018h                                                                 U16       RW           0
+                                    9：Quick stop
+※Note：Wiring refer to 《ZLAC8015D Manual》
+
+Command to qucik stop：
+             Description                                 Transmit                                         Receive
+   Quick stop                           01 06 20 0E 00 05 23 CA                           01 06 20 0E 00 05 23 CA
+
+
+
+3.6. Error and clear
+
+ZLAC8015D supports overvoltage, overcurrent and other protection. All fault information
+can be obtained by reading address 0x20A5/0x20A6 (Left/Right drive).
+
+
+
+
+11 Shenzhen ZhongLing Technology Co.,Ltd.     TEL：+86-0755-29799302             FAX：+86-0755-2912 4283             www.zlingkj.com
+                             ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+故障码如下表：
+ 0x20A5/0x20A6                        Description
+      0x0000                                None
+      0x0001                         Over voltage
+      0x0002                         Under voltage
+      0x0004                         Over current
+      0x0008                            Over load
+      0x0010                 Current following error
+      0x0020                 Position following error
+      0x0040                 Velocity following error
+      0x0080                 Reference voltage error
+      0x0100                         EEPROM error
+      0x0200                           Hall error
+      0x0400          Motor temperature over temperature
+
+Fault clear:
+               Description                               Transmit                                         Receive
+   Clear faults                         01 06 20 0E 00 06 63 CB                           01 06 20 0E 00 06 63 CB
+
+
+
+
+12 Shenzhen ZhongLing Technology Co.,Ltd.     TEL：+86-0755-29799302             FAX：+86-0755-2912 4283             www.zlingkj.com
+                                  ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+4. ADDRESS DIRECTIONARY
+
+    Index                Name                               Description                          Type            Access            Default
+                                      Common constant for Left and Right motors
+   2000h      Communication                 Driver and host communication offline             U16             RW               1000
+              offline time                  time setting.
+                                            Unit: ms
+                                            Range: 0-32767;
+   2001h      RS485 Node ID                 Raange: 1~127                                     U16             RW               4
+   2002h      RS485 Baud Rate               0：256000bps                                       U16             RW               2
+                                            1：128000bps
+                                            2：115200bps
+                                            3：57600bps
+                                            4：38400bps
+                                            5：19200bps
+                                            6：9600bps
+   2003h      Input signal status           2 input signal level status                       U16             RO               0
+                                            Bit0-Bit1: X0-X1 input level status
+   2004h      Out signal status             2 output signal level status                      U16             RO               0
+                                            Bit0-Bit1: Y0-Y1 output status;
+   2005h      Clear feedback                Used to clear feedback position in                U16             RW               0
+              position                      Profile Position Mode.
+                                            0: Invalid;
+                                            1: Clear the feedback position;
+                                            Not saved.
+   2006h      In absolute position          reset the zero point                              U16             RW               0
+              control, reset the zero       0: Invalid.
+              point                         1: Reset the zero point(Left)
+                                            2: Reset the zero point(Right)
+                                            3: Reset the zero point(Right)
+                                            Not saved.
+   2007h      Driver state                  Whether the driver is enabled when                U16             RW               0
+                                            powered on
+                                            0: Stop
+                                            1: Enable
+   2008h      Maximum           motor       Motor maximum speed                               U16             RW               1000
+              speed                         Unit: r/min.
+                                            Range: 1-1000 r/min.
+   2009h      Register       parameter      0: Invalid.                                       U16             RW               0
+              settings                      1: Restore factory settings.
+   200Ah      CAN Node ID                   Range: 1-127                                      U16             RW               1
+   200Bh      CAN Baud rate                 0：1000 Kbit/s                                     U16             RW               1
+                                            1：500 Kbit/s
+
+
+
+
+13 Shenzhen ZhongLing Technology Co.,Ltd.          TEL：+86-0755-29799302             FAX：+86-0755-2912 4283             www.zlingkj.com
+                                ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+                                          2：250 Kbit/s
+                                          3：125 Kbit/s
+                                          4：100 Kbit/s
+                                          5：50 Kbit/s
+                                          6：25 Kbit/s
+   200Ch
+   200Dh      Control mode                0: Undefined                                      U16             RW               3
+                                          1: Position mode(Relative)
+                                          2: Position mode(Absolute)
+                                          3: Velocity mode
+                                          4: Torque mode
+   200Eh      Control word                0x05: Quick stop                                  U16             RW               0
+                                          0x06: Clear faults
+                                          0x07: Stop
+                                          0x08: Enable
+                                          0x10:Start(Synchronous)(Position
+                                          mode)
+                                          0x11: Start(Left)
+                                          0x12: Start(Right)
+   200Fh      Synchronous/asynchr         0: Synchronous                                    U16             RW               0
+              onous control status        1: Asynchronous
+   2010h      Whether    store     RW     0: Invalid                                        U16             RW               0
+              register to EEPROM          1: Store RW register to EEPROM
+   2011h      Quick stop control          How driver process when receive quick             U16             RW               5
+                                          stop command
+                                          5: Stop
+                                          6: Quick stop(with deceleration time )
+                                          7: Quick stop(without deceleration
+                                          time)
+   2012h      Stop control                How driver process when receive stop              U16             RW               0
+                                          command
+                                          0: Invalid
+                                          1: Stop(switch to ready to switch on)
+   2013h      Disable control             How driver process when receive                   U16             RW               800
+                                          disable command
+                                          0: Invalid
+                                          1: Stop(Switch to switch on)
+   2014h      Halt control                How driver process when receive Halt              U16             RW               150
+                                          command
+                                          1: Stop(operation enabled)
+                                          2: Quick stop with deceleration time
+                                          (operation enable)
+                                          3: Quick stop without deceleration
+                                          time(operation enable)
+
+
+
+
+14 Shenzhen ZhongLing Technology Co.,Ltd.         TEL：+86-0755-29799302            FAX：+86-0755-2912 4283             www.zlingkj.com
+                                  ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+   2015h
+   2016h      Input effective level         Bit0：Input(X0)
+                                            Bit1：Input(X0)
+                                                                                              U16             RW               0
+                                            0：Default(High level)
+                                            1：Reverse(Low level)
+   2017h      X0 function choice            0：None                                            U16             RW               9
+              X1 function choice            1-8：NC
+   2018h                                                                                      U16             RW               0
+                                            9：Quick stop
+   2019h      Output effective level        Bit0：Input(X0)
+                                            Bit1：Input(X0)
+                                                                                              U16             RW               0
+                                            0：Default(High level)
+                                            1：Reverse(Low level)
+   201Ah      Y0 function choice            Brake                                             U16             RW               0
+   201Bh      Y1 function choice            0：Open brake
+                                                                                              U16             RW               0
+                                            1：Close brake
+                                                      Left motor parameter
+   2030h      Encoder line                  Range: 0-4096                                     U16             RW               1024
+   2031h      Hall offset angle             Unit: 1°                                          I16             RW               0
+                                            Range: -360-+360
+   2032h      Overload factor               Unit: %                                           U16             RW               200
+                                            Range: 0-300
+   2033h      Rated current                 Unit: 0.1A                                        U16             RW               150
+                                            Range: 0-150
+   2034h      Maximum current               Unit: 0.1A                                        U16             RW               300
+                                            Range: 0-300
+   2035h      Overload     protection       Unit: 10ms                                        U16             RW               300
+              time                          Range: 0-6553
+   2036h      Position       following      Unit: 10counts                                    U16             RW               409
+              error threshold               Range: 1-6553
+   2037h      Velocity     smoothing        Range: 0-30000                                    U16             RW               1000
+              factor
+   2038h      Cl Kp                         Range: 0-30000                                    U16             RW               600
+   2039h      Cl Ki                         Range: 0-30000                                    U16             RW               300
+   203Ah      Feedforward       output      Range: 0-30000                                    U16             RW               100
+              smoothing factor
+   203Bh      Torque            output      Range: 0-30000                                    U16             RW               100
+              smoothing factor
+   203Ch      Vl Kp                         Range: 0-30000                                    U16             RW               500
+   203Dh      Vl Ki                         Range: 0-30000                                    U16             RW               100
+   203Eh      Vl Kf                         Range: 0-30000                                    U16             RW               500
+   203Fh      Pl Kp                         Range: 0-30000                                    U16             RW               100
+   2040h      Pl Kf                         Range: 0-30000                                    U16             RW               50
+   2043h      Initial velocity(Velocity     Initial velocity in velocity mode                 U16             RW               1r/min
+
+
+
+
+15 Shenzhen ZhongLing Technology Co.,Ltd.          TEL：+86-0755-29799302             FAX：+86-0755-2912 4283             www.zlingkj.com
+                                  ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+              mode)                         Unit: r/min；
+                                            Range: 1-250/min；
+   2044h      Initial velocity(Position     Initial velocity in position mode
+                                                                                              U16             RW               1r/min
+              mode)                         Range: 1-250/min；
+   2045h      Poles of motor                Range: 4-64                                       U16             RW               15
+              Over        temperature       Unit: 0.1°C；                                      U16             RW               800
+   2046h
+              threshold                     Range: 0-1200
+              Velocity        observer      0-30000                                           U16             RW               1000
+   2047h
+              coefficient 1
+              Velocity        observer      0-30000                                           U16             RW               750
+   2048h
+              coefficient 2
+              Velocity        observer      0-30000                                           U16             RW               350
+   2049h
+              coefficient 3
+              Velocity        observer      0-30000                                           U16             RW               1000
+   204Ah
+              coefficient 4
+                                                      Right motor parameter
+   2060h      Encoder line                  Range: 0-4096                                     U16             RW               1024
+   2061h      Hall offset angle             Unit: 1°                                          I16             RW               0
+                                            Range: -360-+360
+   2062h      Overload factor               Unit: %                                           U16             RW               200
+                                            Range: 0-300
+   2063h      Rated current                 Unit: 0.1A                                        U16             RW               150
+                                            Range: 0-150
+   2064h      Maximum current               Unit: 0.1A                                        U16             RW               300
+                                            Range: 0-300
+   2065h      Overload     protection       Unit: 10ms                                        U16             RW               300
+              time                          Range: 0-6553
+   2066h      Position        following     Unit: 10counts                                    U16             RW               409
+              error threshold               Range: 1-6553
+   2067h      Velocity     smoothing        Range: 0-30000                                    U16             RW               1000
+              factor
+   2068h      Cl Kp                         Range: 0-30000                                    U16             RW               600
+   2069h      Cl Ki                         Range: 0-30000                                    U16             RW               300
+   206Ah      Feedforward       output      Range: 0-30000                                    U16             RW               100
+              smoothing factor
+   206Bh      Torque            output      Range: 0-30000                                    U16             RW               100
+              smoothing factor
+   206Ch      Vl Kp                         Range: 0-30000                                    U16             RW               500
+   206Dh      Vl Ki                         Range: 0-30000                                    U16             RW               100
+   206Eh      Vl Kf                         Range: 0-30000                                    U16             RW               500
+   206Fh      Pl Kp                         Range: 0-30000                                    U16             RW               100
+   2070h      Pl Kf                         Range: 0-30000                                    U16             RW               50
+   2073h      Initial velocity(Velocity     Initial velocity in velocity mode                 U16             RW               1r/min
+
+
+
+
+16 Shenzhen ZhongLing Technology Co.,Ltd.          TEL：+86-0755-29799302             FAX：+86-0755-2912 4283             www.zlingkj.com
+                                 ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+              mode)                        Unit: r/min；
+                                           Range: 1-250/min；
+   2074h      Initial velocity(Position    Initial velocity in position mode
+                                                                                             U16             RW               1r/min
+              mode)                        Range: 1-250/min；
+   2075h      Poles of motor               Range: 4-64                                       U16             RW               15
+              Over         temperature     Unit: 0.1°C；                                      U16             RW               800
+   2076h
+              threshold                    Range: 0-1200
+              Velocity        observer     0-30000                                           U16             RW               1000
+   2077h
+              coefficient 1
+              Velocity        observer     0-30000                                           U16             RW               750
+   2078h
+              coefficient 2
+              Velocity        observer     0-30000                                           U16             RW               350
+   2079h
+              coefficient 3
+              Velocity        observer     0-30000                                           U16             RW               1000
+   207Ah
+              coefficient 4
+                                                        Control parameter
+              Acceleration                 Acceleration time
+   2080h                                                                                     U16             RW                   500ms
+              time(Left)                   Range：0-32767ms
+              Acceleration                 Acceleration time
+   2081h                                                                                     U16             RW                   500ms
+              time(Right)                  Range：0-32767ms
+              Deceleration                 Deceleration time
+   2082h                                                                                     U16             RW                   500ms
+              time(Left)                   Range：0-32767ms
+              Deceleration                 Deceleration time
+   2083h                                                                                     U16             RW                   500ms
+              time(Right)                  Range：0-32767ms
+              Deceleration time of
+   2084h                                   Range: 0-32767ms                                  U16             RW               10ms
+              quick stop(Left)
+              Deceleration time of
+   2085h                                   Range: 0-32767ms                                  U16             RW               10ms
+              quick stop(Right)
+   2086h      Torque rate(Left)            Unit: mA/S                                        U16             RW               300ms
+   2087h      Torque rate(Right)           Unit: mA/S                                        U16             RW               300ms
+                                           Target velocity in velocity mode
+   2088h      Target velocity(Left)                                                          I16             RW               0
+                                           Range: -3000-3000r/min
+                                           Target velocity in velocity mode
+   2089h      Target velocity(Right)                                                         I16             RW               0
+                                           Range: -3000-3000r/min
+              Target position high 16      Range:
+   208Ah                                                                                     I16             RW                      0
+              bits(Left)                   Relativ：
+                                           -0x7FFFFFFF~0x7FFFFFFF
+              Target position low 16
+   208Bh                                   Absolute：                                         I16             RW                      0
+              bits(Left)
+                                           -0x3FFFFFFF~0x3FFFFFFF
+              Target position high 16      Range:
+   208Ch                                                                                     I16             RW                      0
+              bits(Right)                  Relative：
+                                           -0x7FFFFFFF~0x7FFFFFFF
+              Target position low 16
+   208Dh                                   Absolute：                                         I16             RW                      0
+              bits(Right)
+                                           -0x3FFFFFFF~0x3FFFFFFF
+
+
+
+
+17 Shenzhen ZhongLing Technology Co.,Ltd.         TEL：+86-0755-29799302             FAX：+86-0755-2912 4283             www.zlingkj.com
+                              ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+                                        Target speed in position mode
+   208Eh      Target speed(Left)                                                          U16             RW               120r/min
+                                        Range：1-1000r/min；
+                                        Target speed in position mode
+   208Fh      Target speed(Right)                                                         U16             RW               120r/min
+                                        Range：1-1000r/min；
+   2090h      Target torque(Left)       Unit: mA                                          I16             RW               0
+                                        Range: -30000~30000；
+   2091h      Target torque(Right)      Unit: mA                                          I16             RW               0
+                                        Range: -30000~30000；
+                                                   Read only parameter
+   20A0h      Sofeware version          Default                                           U16             RO               -
+   20A1h      DC voltage                Unit: 0.01V                                       U16             RO               0
+   20A2h      Motor state               0: Stopped                                        U16             RO               0
+                                        1: Running
+                                        High 8 bits(Left)
+                                        Low 8 bits(Right)
+   20A3h      Hall state                Range: 0-7                                        U16             RO               0
+                                        High 8 bits(Left)
+                                        Low 8 bits(Right)
+   20A4h      Motor                     Unit: 1°C；                                        U16             RO               -
+              temperature               Range: 0-120
+                                        High 8 bits(Left)
+                                        Low 8 bits(Right)
+                                        0000h: None
+                                        0001h : Over voltage
+                                        0002h : Under voltage
+                                        0004h: Over current
+                                        0008h: Over load
+                                        0010h: Current following error
+   20A5h      Error code(Left)          0020h: Position following error                   U16             RO               0
+                                        0040h: Velocity following error
+                                        0080h : Reference voltage error
+                                        0100h: EEPROM error
+                                        0200h: Hall error
+                                        0400h: Motor temperature over
+                                        temperature
+                                        0000h: None
+                                        0001h : Over voltage
+                                        0002h : Under voltage
+                                        0004h: Over current
+   20A6h      Error code(Right)         0008h: Over load                                  U16             RO               0
+                                        0010h: Current following error
+                                        0020h: Position following error
+                                        0040h: Velocity following error
+                                        0080h : Reference voltage error
+
+
+
+
+18 Shenzhen ZhongLing Technology Co.,Ltd.      TEL：+86-0755-29799302             FAX：+86-0755-2912 4283             www.zlingkj.com
+                               ZLAC8015D Servo Driver (Special for Hub Servo Motor) RS485 Communication Instruction Version 1.04
+
+
+
+
+                                         0100h: EEPROM error
+                                         0200h: Hall error
+                                         0400h: Motor temperature over
+                                         temperature
+   20A7h      Actual      motor
+              position high 16                                                             I16             RO               0
+                                         Actual motor position, unit:
+              bits(Left)
+                                         counts
+   20A8h      Actual      motor
+                                         Range:-0x7FFFFFFF~0x7FFFFFFF
+              position low 16                                                              I16             RO               0
+              bits(Left)
+   20A9h      Actual      motor
+              position high 16                                                             I16             RO               0
+                                         Actual motor position, unit:
+              bits(Right)
+                                         counts
+   20AAh      Actual      motor
+                                         Range:-0x7FFFFFFF~0x7FFFFFFF
+              position low 16                                                              I16             RO               0
+              bits(Right)
+              Actual
+   20ABh                                 Actual velocity，unit: 0.1r/min                    I16             RO               0
+              velocity(Left)
+              Actual
+   20ACh                                 Actual velocity，unit: 0.1r/min                    I16             RO               0
+              velocity(Right)
+              Actual torque(Left)        Unit: 0.1A                                        I16             RO               0
+   20ADh
+                                         Range: -300~300；
+              Actual                     Unit: 0.1A                                        I16             RO               0
+   20AEh
+              torque(Right)              Range: -300~300；
+   20AFh      Software                   01
+              connected status
+   Note:
+   U16 means unsigned 16 bits; I16 means signed 16 bits; U32 means unsigned 32 bits; I32 means signed 32 bits.
+
+
+
+
+19 Shenzhen ZhongLing Technology Co.,Ltd.       TEL：+86-0755-29799302             FAX：+86-0755-2912 4283             www.zlingkj.com
+
