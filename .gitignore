@@ -6,16 +6,24 @@ __pycache__/
 # Local editor / CubeMX metadata
 .vscode/
 .mxproject
+AGENT.md
+AGENTS.md
 
 # Keil user state and generated build outputs
+MDK-ARM/*.uvprojx
 MDK-ARM/*.uvguix.*
+MDK-ARM/*.uvguix*
 MDK-ARM/*.uvoptx
 MDK-ARM/*.bak
+MDK-ARM/*.jlink
+MDK-ARM/*.scvd
 MDK-ARM/JLinkLog.txt
 MDK-ARM/JLinkSettings.ini
 MDK-ARM/agent_build*.log
 MDK-ARM/agent_flash*.log
 MDK-ARM/startup_stm32f103xb.lst
+MDK-ARM/DebugConfig/
+MDK-ARM/RTE/
 MDK-ARM/LY-020-USB-CDCsoftware/
 
 # Customer-facing / temporary investigation notes kept local only
